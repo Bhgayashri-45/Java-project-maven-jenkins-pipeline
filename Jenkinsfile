@@ -2,45 +2,65 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven 3.9.0' // Name must match Maven installation in Jenkins
-        jdk 'JDK 17'         // Name must match JDK in Jenkins (optional if JAVA_HOME is set)
+        jdk 'jdk17'
+        maven 'Maven_3.8.7'
     }
 
     environment {
-        SONARQUBE_ENV = 'SonarQubeServer' // Name as configured in Jenkins Sonar settings
+        DOCKER_IMAGE = 'bhagyashri45/java-test-app'
+        DOCKER_TAG = '1.0'
+        DOCKER_CREDENTIALS_ID = 'docker-hub-creds'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git 'https://your-repo-url.git'
+                git branch: 'main', url: 'https://github.com/Bhgayashri-45/Java-project-maven-jenkins-pipeline.git'
             }
         }
 
-        stage('Build') {
+        stage('Image Build and push') {
             steps {
-                sh 'mvn clean compile'
-            }
-        }
+                script{
+                        sh '''
+                                echo "Building Docker Image ..."
+                                docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+                        '''
+                        withCredentials([usernamePassword(credentialId: "$DOCKER_CREDENTIALS_ID", usernameVariable: "DOCKER_IMAGE", passwordVariable: "$DOCKER_PASS")]){
+                                sh '''
+                                        echo "Docker logging in ..."
+                                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
 
-        stage('Code Quality - SonarQube') {
-            steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh 'mvn sonar:sonar -Dsonar.projectKey=java-pipeline -Dsonar.projectName=Java Pipeline Project'
+                                        echo "Docker image push ..."
+                                        docker push $DOCKER_USER:$DOCKER_TAG
+                                '''
+                        }
+
                 }
             }
         }
 
-        stage('Test') {
+        stage('SonarQube Analysis') {
             steps {
-                sh 'mvn test'
+                withCredentials([string(credentialsId: 'Jenkins-Sonarqube-Token', variable: 'SONAR_TOKEN')]) {
+                    sh """
+                        mvn clean verify sonar:sonar \
+                          -Dsonar.projectKey=Java-project-maven-jenkins-pipeline \
+                          -Dsonar.projectName=Java-project-maven-jenkins-pipeline \
+                          -Dsonar.java.binaries=. \
+                          -Dsonar.host.url=http://localhost:9000 \
+                          -X
+                    """
+                }
             }
         }
 
-        stage('Package') {
-            steps {
-                sh 'mvn package'
-            }
+    post {
+        success {
+            echo "✅ Successfully built and pushed Docker image to Docker Hub!"
+        }
+        failure {
+            echo "❌ Pipeline failed. Check logs for more details."
         }
     }
 }
