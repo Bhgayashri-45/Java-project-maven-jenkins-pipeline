@@ -26,12 +26,12 @@ pipeline {
                         echo "Building Docker Image ..."
                         docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
                     '''
-                    withCredentials([usernamePassword(credentialsId: "$DOCKER_CREDENTIALS_ID", usernameVariable: "DOCKER_IMAGE", passwordVariable: "DOCKER_PASS")]){
+                    withCredentials([usernamePassword(credentialsId: "$DOCKER_CREDENTIALS_ID", usernameVariable: "DOCKER_USER", passwordVariable: "DOCKER_PASS")]){
                         sh '''
                             echo "Docker logging in ..."
                             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                             echo "Docker image push ..."
-                            docker push $DOCKER_USER:$DOCKER_TAG
+                            docker push $DOCKER_IMAGE:$DOCKER_TAG
                         '''
                     }
 
