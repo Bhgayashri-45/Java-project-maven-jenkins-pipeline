@@ -54,7 +54,9 @@ pipeline {
             }
         }
 
-        post {
+    }
+
+    post {
             success {
                 echo "✅ Successfully built and pushed Docker image to Docker Hub!"
             }
@@ -62,5 +64,4 @@ pipeline {
                 echo "❌ Pipeline failed. Check logs for more details."
             }
         }
-    }
 }
