@@ -22,19 +22,18 @@ pipeline {
         stage('Image Build and push') {
             steps {
                 script{
+                    sh '''
+                        echo "Building Docker Image ..."
+                        docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+                    '''
+                    withCredentials([usernamePassword(credentialId: "$DOCKER_CREDENTIALS_ID", usernameVariable: "DOCKER_IMAGE", passwordVariable: "$DOCKER_PASS")]){
                         sh '''
-                                echo "Building Docker Image ..."
-                                docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+                            echo "Docker logging in ..."
+                            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                            echo "Docker image push ..."
+                            docker push $DOCKER_USER:$DOCKER_TAG
                         '''
-                        withCredentials([usernamePassword(credentialId: "$DOCKER_CREDENTIALS_ID", usernameVariable: "DOCKER_IMAGE", passwordVariable: "$DOCKER_PASS")]){
-                                sh '''
-                                        echo "Docker logging in ..."
-                                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-
-                                        echo "Docker image push ..."
-                                        docker push $DOCKER_USER:$DOCKER_TAG
-                                '''
-                        }
+                    }
 
                 }
             }
@@ -55,12 +54,13 @@ pipeline {
             }
         }
 
-    post {
-        success {
-            echo "✅ Successfully built and pushed Docker image to Docker Hub!"
-        }
-        failure {
-            echo "❌ Pipeline failed. Check logs for more details."
+        post {
+            success {
+                echo "✅ Successfully built and pushed Docker image to Docker Hub!"
+            }
+            failure {
+                echo "❌ Pipeline failed. Check logs for more details."
+            }
         }
     }
 }
