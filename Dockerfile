@@ -6,5 +6,5 @@ RUN mvn clean package -DskipTests
 
 FROM maven:3.8.7-openjdk-17-slim
 WORKDIR /app
-COPY --from-builder /java-test-app/target/*.jar app.jar
+COPY --from=builder /java-test-app/target/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
