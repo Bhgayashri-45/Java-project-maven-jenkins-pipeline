@@ -26,7 +26,7 @@ pipeline {
                         echo "Building Docker Image ..."
                         docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
                     '''
-                    withCredentials([usernamePassword(credentialId: "$DOCKER_CREDENTIALS_ID", usernameVariable: "DOCKER_IMAGE", passwordVariable: "$DOCKER_PASS")]){
+                    withCredentials([usernamePassword(credentialId: "$DOCKER_CREDENTIALS_ID", usernameVariable: "DOCKER_IMAGE", passwordVariable: "DOCKER_PASS")]){
                         sh '''
                             echo "Docker logging in ..."
                             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
